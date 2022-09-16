@@ -16,11 +16,11 @@ from lib import common
 from env import MEDAEnv
 
 GAMMA = 0.99
-LEARNING_RATE = 0.0001
-ENTROPY_BETA = 0.01
+LEARNING_RATE = 1e-7
+ENTROPY_BETA = 1e-6
 BATCH_SIZE = 64
 
-REWARD_STEPS = 4
+REWARD_STEPS = 1
 CLIP_GRAD = 0.1
 
 class AtariA2C(nn.Module):
@@ -28,25 +28,25 @@ class AtariA2C(nn.Module):
 		super(AtariA2C, self).__init__()
 
 		self.conv = nn.Sequential(
-			nn.Conv2d(input_shape[0], 32, 3, stride=2),
+			nn.Conv2d(input_shape[0], 32, 2, stride=2),
 			nn.ReLU(),
-			nn.Conv2d(32, 64, 2, stride=1),
+			nn.Conv2d(32, 64, 2, stride=2),
 			nn.ReLU(),
-			nn.Conv2d(64, 64, 2, stride=1),
+			nn.Conv2d(64, 64, 2, stride=2),
 			nn.ReLU()
 		)
 
 		conv_out_size = self._get_conv_out(input_shape)
 		self.policy = nn.Sequential(
-			nn.Linear(conv_out_size, 512),
+			nn.Linear(conv_out_size, 128),
 			nn.ReLU(),
-			nn.Linear(512, n_actions)
+			nn.Linear(128, n_actions)
 		)
 
 		self.value = nn.Sequential(
-			nn.Linear(conv_out_size, 512),
+			nn.Linear(conv_out_size, 128),
 			nn.ReLU(),
-			nn.Linear(512, 1)
+			nn.Linear(128, 1)
 		)
 
 	def _get_conv_out(self, shape):
@@ -104,7 +104,7 @@ if __name__ == "__main__":
 	device = torch.device("cuda" if args.cuda else "cpu")
 
 	env = MEDAEnv(p=0.9)
-	writer = SummaryWriter(comment="static-0.0001-a2c_" + args.name)
+	writer = SummaryWriter(comment="test_runs" + args.name)
 
 	net = AtariA2C(env.observation_space, env.action_space).to(device)
 	print(net)
@@ -112,11 +112,11 @@ if __name__ == "__main__":
 	agent = ptan.agent.PolicyAgent(lambda x: net(x)[0], apply_softmax=True, device=device)
 	exp_source = ptan.experience.ExperienceSourceFirstLast(env, agent, gamma=GAMMA, steps_count=REWARD_STEPS)
 
-	optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE, eps=1e-3)
+	optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE, eps=1e-7)
 
 	batch = []
 
-	with common.RewardTracker(writer, stop_reward=18) as tracker:
+	with common.RewardTracker(writer, stop_reward=7) as tracker:
 		with ptan.common.utils.TBMeanTracker(writer, batch_size=10) as tb_tracker:
 			for step_idx, exp in enumerate(exp_source):
 				batch.append(exp)

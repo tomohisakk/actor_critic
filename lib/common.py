@@ -28,7 +28,7 @@ class RewardTracker:
 		mean_reward = np.mean(self.total_rewards[-100:])
 		epsilon_str = "" if epsilon is None else ", eps %.2f" % epsilon
 		if len(self.total_rewards) % 100 == 0:
-			print("%d games, mean reward %.3f, speed %.2f f/s%s" % (len(self.total_rewards), mean_reward, speed, epsilon_str))
+			print("%d epoches, %d games, mean reward %.3f, speed %.2f f/s%s" % (len(self.total_rewards)/10000,  len(self.total_rewards), mean_reward, speed, epsilon_str))
 		sys.stdout.flush()
 		if epsilon is not None:
 			self.writer.add_scalar("epsilon", epsilon, frame)
