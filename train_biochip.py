@@ -16,9 +16,9 @@ from lib import common
 from env import MEDAEnv
 
 GAMMA = 0.99
-LEARNING_RATE = 1e-7
-ENTROPY_BETA = 1e-6
-BATCH_SIZE = 64
+LEARNING_RATE = 1e-8
+ENTROPY_BETA = 1e-7
+BATCH_SIZE = 16
 
 REWARD_STEPS = 1
 CLIP_GRAD = 0.1
@@ -112,7 +112,7 @@ if __name__ == "__main__":
 	agent = ptan.agent.PolicyAgent(lambda x: net(x)[0], apply_softmax=True, device=device)
 	exp_source = ptan.experience.ExperienceSourceFirstLast(env, agent, gamma=GAMMA, steps_count=REWARD_STEPS)
 
-	optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE, eps=1e-7)
+	optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
 
 	batch = []
 

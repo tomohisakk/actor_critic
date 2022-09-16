@@ -32,7 +32,7 @@ class MEDAEnv(gym.Env):
 		self.action_space = len(self.actions)
 		self.observation_space = (3, w, h)
 		self.n_steps = 0
-		self.max_step = 100
+		self.max_step = 2*(w+h)
 
 		self.state = (0,0)
 		self.goal = (w-1, h-1)
