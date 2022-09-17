@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import gym
 import ptan
 import numpy as np
@@ -16,12 +15,12 @@ from lib import common
 from env import MEDAEnv
 
 GAMMA = 0.99
-LEARNING_RATE = 1e-8
-ENTROPY_BETA = 1e-7
-BATCH_SIZE = 16
+LEARNING_RATE = 1e-3
+ENTROPY_BETA = 1e-2
+BATCH_SIZE = 32
 
-REWARD_STEPS = 1
-CLIP_GRAD = 0.1
+REWARD_STEPS = 4
+CLIP_GRAD = 1.0
 
 class AtariA2C(nn.Module):
 	def __init__(self, input_shape, n_actions):
@@ -54,7 +53,7 @@ class AtariA2C(nn.Module):
 		return int(np.prod(o.size()))
 
 	def forward(self, x):
-		fx = x.float() / 256
+		fx = x.float()
 		conv_out = self.conv(fx).view(fx.size()[0], -1)
 		return self.policy(conv_out), self.value(conv_out)
 
@@ -91,6 +90,7 @@ def unpack_batch(batch, net, device='cpu'):
 		last_vals_np *= GAMMA ** REWARD_STEPS
 		rewards_np[not_done_idx] += last_vals_np
 
+#	print(rewards_np)
 	ref_vals_v = torch.FloatTensor(rewards_np).to(device)
 
 	return states_v, actions_t, ref_vals_v
@@ -119,6 +119,7 @@ if __name__ == "__main__":
 	with common.RewardTracker(writer, stop_reward=7) as tracker:
 		with ptan.common.utils.TBMeanTracker(writer, batch_size=10) as tb_tracker:
 			for step_idx, exp in enumerate(exp_source):
+#				print(exp.reward)
 				batch.append(exp)
 
 				# handle new rewards

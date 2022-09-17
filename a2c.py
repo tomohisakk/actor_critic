@@ -22,6 +22,7 @@ NUM_ENVS = 50
 REWARD_STEPS = 4
 CLIP_GRAD = 0.1
 
+
 class AtariA2C(nn.Module):
 	def __init__(self, input_shape, n_actions):
 		super(AtariA2C, self).__init__()
@@ -97,7 +98,7 @@ def unpack_batch(batch, net, device='cpu'):
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--cuda", default=False, action="store_true", help="Enable cuda")
+	parser.add_argument("--cuda", default=True, action="store_true", help="Enable cuda")
 	parser.add_argument("-n", "--name", required=True, help="Name of the run")
 	args = parser.parse_args()
 	device = torch.device("cuda" if args.cuda else "cpu")

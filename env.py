@@ -104,6 +104,8 @@ class MEDAEnv(gym.Env):
 			done = True
 		elif dist < _dist:
 			reward = 0.5
+		elif dist == _dist:
+			reward = -0.5
 		else:
 			reward = -0.8
 
