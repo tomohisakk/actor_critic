@@ -15,11 +15,11 @@ from lib import common
 from env import MEDAEnv
 
 GAMMA = 0.99
-LEARNING_RATE = 1e-3
-ENTROPY_BETA = 1e-2
-BATCH_SIZE = 32
+LEARNING_RATE = 1e-7
+ENTROPY_BETA = 1e-3
+BATCH_SIZE = 64
 
-REWARD_STEPS = 4
+REWARD_STEPS = 1
 CLIP_GRAD = 1.0
 
 class AtariA2C(nn.Module):
@@ -27,11 +27,11 @@ class AtariA2C(nn.Module):
 		super(AtariA2C, self).__init__()
 
 		self.conv = nn.Sequential(
-			nn.Conv2d(input_shape[0], 32, 2, stride=2),
+			nn.Conv2d(input_shape[0], 32, 1, stride=1),
 			nn.ReLU(),
-			nn.Conv2d(32, 64, 2, stride=2),
+			nn.Conv2d(32, 64, 2, stride=1),
 			nn.ReLU(),
-			nn.Conv2d(64, 64, 2, stride=2),
+			nn.Conv2d(64, 64, 2, stride=1),
 			nn.ReLU()
 		)
 
@@ -53,7 +53,7 @@ class AtariA2C(nn.Module):
 		return int(np.prod(o.size()))
 
 	def forward(self, x):
-		fx = x.float()
+		fx = x.float()/2
 		conv_out = self.conv(fx).view(fx.size()[0], -1)
 		return self.policy(conv_out), self.value(conv_out)
 
@@ -98,7 +98,7 @@ def unpack_batch(batch, net, device='cpu'):
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--cuda", default=False, action="store_true", help="Enable cuda")
+	parser.add_argument("--cuda", default=True, action="store_true", help="Enable cuda")
 	parser.add_argument("-n", "--name", required=True, help="Name of the run")
 	args = parser.parse_args()
 	device = torch.device("cuda" if args.cuda else "cpu")
