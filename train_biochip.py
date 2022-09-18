@@ -98,7 +98,7 @@ def unpack_batch(batch, net, device='cpu'):
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--cuda", default=True, action="store_true", help="Enable cuda")
+	parser.add_argument("--cuda", default=False, action="store_true", help="Enable cuda")
 	parser.add_argument("-n", "--name", required=True, help="Name of the run")
 	args = parser.parse_args()
 	device = torch.device("cuda" if args.cuda else "cpu")
