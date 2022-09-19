@@ -14,6 +14,7 @@ import torch.optim as optim
 from lib import common
 
 from envs.static import MEDAEnv
+#from envs.dynamic import MEDAEnv
 
 GAMMA = 0.99
 LEARNING_RATE = 0.001
@@ -58,11 +59,8 @@ class AtariA2C(nn.Module):
 		conv_out = self.conv(fx).view(fx.size()[0], -1)
 		return self.policy(conv_out), self.value(conv_out)
 
-	def save_checkpoint(self, loss, min_loss, checkpoint_path):
-		print()
-		print("... updating loss value ...")
-		print(str(min_loss) + "->" + str(loss))
-		print()
+	def save_checkpoint(self, checkpoint_path):
+		print("... saveing checkpoint ...")
 		T.save(self.state_dict(), checkpoint_path)
 
 	def load_checkpoint(self, checkpoint_path):
@@ -129,7 +127,6 @@ if __name__ == "__main__":
 	optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
 
 	batch = []
-	min_loss_v = np.inf
 
 	n_games = 0
 
@@ -142,7 +139,9 @@ if __name__ == "__main__":
 				# handle new rewards
 				new_rewards = exp_source.pop_total_rewards()
 				if new_rewards:
-					n_games+= 1
+					n_games += 1
+					if n_games%10000 == 0:
+						net.save_checkpoint(checkpoint_path)
 					if tracker.reward(new_rewards[0], step_idx, n_games):
 						break
 
@@ -177,10 +176,6 @@ if __name__ == "__main__":
 				optimizer.step()
 				# get full loss
 				loss_v += loss_policy_v
-
-				if min_loss_v > loss_v:
-					net.save_checkpoint(loss_v, min_loss_v, checkpoint_path)
-					min_loss_v = loss_v
 					
 				tb_tracker.track("advantage",       adv_v, n_games)
 				tb_tracker.track("values",          value_v, n_games)

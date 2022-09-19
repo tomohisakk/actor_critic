@@ -5,6 +5,7 @@ import numpy as np
 from enum import IntEnum
 import math
 import collections
+import gym
 
 class Actions(IntEnum):
 	N = 0
@@ -19,7 +20,7 @@ class Maps():
 	Dynanic_module = "*"
 	Health = "."
 
-class MEDAEnv:
+class MEDAEnv(gym.Env):
 	def __init__(self, w=8, h=8, p=0.9, test_flag=False):
 		super(MEDAEnv, self).__init__()
 		assert w > 0 and h > 0
