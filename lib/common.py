@@ -2,9 +2,6 @@ import sys
 import time
 import numpy as np
 
-import torch
-import torch.nn as nn
-
 
 class RewardTracker:
 	def __init__(self, writer, stop_reward):
@@ -30,16 +27,16 @@ class RewardTracker:
 		speed = (frame - self.ts_frame) / (time.time() - self.ts)
 		self.ts_frame = frame
 		self.ts = time.time()
-		mean_reward = np.mean(self.total_rewards[-1000:])
-		mean_n_steps = np.mean(self.total_n_steps_ep[-1000:])
-		if len(self.total_rewards) % 1000 == 0:
+		mean_reward = np.mean(self.total_rewards[-100:])
+		mean_n_steps = np.mean(self.total_n_steps_ep[-100:])
+		if len(self.total_rewards) % 100 == 0:
 			print("%d epoches, %d games, avg steps %d, mean reward %.3f, speed %.2f"
 				%(n_epoches, n_games, mean_n_steps, mean_reward, speed))
 			sys.stdout.flush()
 		self.writer.add_scalar("speed", speed, frame)
-		self.writer.add_scalar("reward_1000", mean_reward, frame)
+		self.writer.add_scalar("reward_100", mean_reward, frame)
 		self.writer.add_scalar("reward", reward, frame)
-		self.writer.add_scalar("steps_1000", n_steps_ep, frame)
+		self.writer.add_scalar("steps_100", n_steps_ep, frame)
 		if n_epoches > 500:
 			print("Finish %d epoches and %d games" % n_epoches, n_games)
 			return True

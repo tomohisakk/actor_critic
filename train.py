@@ -1,3 +1,4 @@
+import os
 import gym
 import ptan
 import numpy as np
@@ -12,14 +13,14 @@ import torch.optim as optim
 
 from lib import common
 
-from env import MEDAEnv
+from envs.static import MEDAEnv
 
 GAMMA = 0.99
 LEARNING_RATE = 0.001
 ENTROPY_BETA = 0.01
 BATCH_SIZE = 32
 
-REWARD_STEPS = 4
+REWARD_STEPS = 1
 CLIP_GRAD = 1.0
 
 class AtariA2C(nn.Module):
@@ -56,6 +57,16 @@ class AtariA2C(nn.Module):
 		fx = x.float()/2
 		conv_out = self.conv(fx).view(fx.size()[0], -1)
 		return self.policy(conv_out), self.value(conv_out)
+
+	def save_checkpoint(self, loss, min_loss, checkpoint_path):
+		print()
+		print("... updating loss value ...")
+		print(str(min_loss) + "->" + str(loss))
+		print()
+		T.save(self.state_dict(), checkpoint_path)
+
+	def load_checkpoint(self, checkpoint_path):
+		self.load_state_dict(T.load(checkpoint_path))
 
 
 def unpack_batch(batch, net, device='cpu'):
@@ -99,7 +110,12 @@ def unpack_batch(batch, net, device='cpu'):
 if __name__ == "__main__":
 
 	env = MEDAEnv(p=0.9)
-	writer = SummaryWriter(comment="LR=" + str(LEARNING_RATE) + "_EB=" + str(ENTROPY_BETA))
+	env_name = "LR=" + str(LEARNING_RATE) + "_EB=" + str(ENTROPY_BETA)
+	writer = SummaryWriter(comment = env_name)
+
+	if not os.path.exists("saves"):
+		os.makedirs("saves")
+	checkpoint_path = "saves/" + env_name
 
 #	device = T.device('cuda:0' if T.cuda.is_available else 'cpu')
 	device = T.device('cpu')
@@ -113,6 +129,7 @@ if __name__ == "__main__":
 	optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
 
 	batch = []
+	min_loss_v = np.inf
 
 	with common.RewardTracker(writer, stop_reward=10) as tracker:
 		with ptan.common.utils.TBMeanTracker(writer, batch_size=10) as tb_tracker:
@@ -158,6 +175,10 @@ if __name__ == "__main__":
 				# get full loss
 				loss_v += loss_policy_v
 
+				if min_loss_v > loss_v:
+					net.save_checkpoint(loss_v, min_loss_v, checkpoint_path)
+					min_loss_v = loss_v
+					
 				tb_tracker.track("advantage",       adv_v, step_idx)
 				tb_tracker.track("values",          value_v, step_idx)
 				tb_tracker.track("batch_rewards",   vals_ref_v, step_idx)

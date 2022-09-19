@@ -5,7 +5,6 @@ import numpy as np
 from enum import IntEnum
 import math
 import collections
-import gym
 
 class Actions(IntEnum):
 	N = 0
@@ -20,7 +19,7 @@ class Maps():
 	Dynanic_module = "*"
 	Health = "."
 
-class MEDAEnv(gym.Env):
+class MEDAEnv:
 	def __init__(self, w=8, h=8, p=0.9, test_flag=False):
 		super(MEDAEnv, self).__init__()
 		assert w > 0 and h > 0
@@ -38,9 +37,13 @@ class MEDAEnv(gym.Env):
 		self.goal = (w-1, h-1)
 		self.maps = Maps()
 		self.map = self._gen_random_map()
-#		self.m_usage = np.zeros((l, w))
 
 		self.test_flag = test_flag
+
+#		self.m_usage = np.zeros((l, w))
+
+		self.dynamic_flag = 0
+		self.dynamic_state = (0,0)
 
 	def reset(self, test_map=None):
 		self.n_steps = 0
@@ -50,6 +53,8 @@ class MEDAEnv(gym.Env):
 			self.map = self._gen_random_map()
 		else:
 			self.map = test_map
+
+#		self.m_usage = np.zeros((self.length, self.width))
 
 		obs = self._get_obs()
 
@@ -92,25 +97,27 @@ class MEDAEnv(gym.Env):
 		_dist = self._get_dist(self.state, self.goal)
 #		print(_dist)
 		self._update_position(action)
-		dist = self._get_dist(self.state, self.goal)
-#		print(self.map)
+
+		if self.dynamic_flag == 1:
+			dist = self._get_dist(self.dynamic_state, self.goal)
+			self.dynamic_flag = 0
+		else:
+			dist = self._get_dist(self.state, self.goal)
+#		print(dist_)
 
 		if dist == 0:
 			reward = 1.0
 			done = True
-#			print("okok1")
 		elif self.n_steps == self.max_step:
 			reward = -0.8
 			done = True
 		elif dist < _dist:
 			reward = 0.5
-		elif dist == _dist:
-			reward = -0.5
 		else:
 			reward = -0.8
-
-		if self.test_flag == True:
-			print(self.map)
+		
+#		if self.test_flag == True:
+#			print(self.map)
 
 		obs = self._get_obs()
 #		print(obs)
@@ -141,6 +148,12 @@ class MEDAEnv(gym.Env):
 			self.state = state_
 			self.map[self.state[1]][self.state[0]] = self.maps.State
 #			print(self.map)
+		elif 0 <= state_[1] < self.w and 0 <= state_[0] < self.h and \
+			 self.map[state_[1]][state_[0]] == self.maps.Dynanic_module:
+#			print("Derror")
+			self.dynamic_flag += 1
+			self.dynamic_state = state_
+			self.map[state_[1]][state_[0]] = self.maps.Static_module
 
 		return
 
@@ -156,6 +169,7 @@ class MEDAEnv(gym.Env):
 					obs[j][i][2] = 1
 #		print(obs)
 		return obs
+
 
 	def close(self):
 		pass
