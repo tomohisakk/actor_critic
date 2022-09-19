@@ -15,11 +15,11 @@ from lib import common
 from env import MEDAEnv
 
 GAMMA = 0.99
-LEARNING_RATE = 1e-7
-ENTROPY_BETA = 1e-3
-BATCH_SIZE = 64
+LEARNING_RATE = 0.001
+ENTROPY_BETA = 0.01
+BATCH_SIZE = 32
 
-REWARD_STEPS = 1
+REWARD_STEPS = 4
 CLIP_GRAD = 1.0
 
 class AtariA2C(nn.Module):
@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
 	batch = []
 
-	with common.RewardTracker(writer, stop_reward=7) as tracker:
+	with common.RewardTracker(writer, stop_reward=10) as tracker:
 		with ptan.common.utils.TBMeanTracker(writer, batch_size=10) as tb_tracker:
 			for step_idx, exp in enumerate(exp_source):
 #				print(exp.reward)

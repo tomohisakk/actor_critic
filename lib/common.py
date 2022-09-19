@@ -15,58 +15,32 @@ class RewardTracker:
 		self.ts = time.time()
 		self.ts_frame = 0
 		self.total_rewards = []
+		self.total_n_steps_ep = []
 		return self
 
 	def __exit__(self, *args):
 		self.writer.close()
 
-	def reward(self, reward, frame, epsilon=None):
+	def reward(self, reward, frame):
 		self.total_rewards.append(reward)
+		n_steps_ep = frame - self.ts_frame
+		self.total_n_steps_ep.append(n_steps_ep)
+		n_epoches = int(len(self.total_rewards)/10000)
+		n_games = int(len(self.total_rewards))
 		speed = (frame - self.ts_frame) / (time.time() - self.ts)
 		self.ts_frame = frame
 		self.ts = time.time()
-		mean_reward = np.mean(self.total_rewards[-100:])
-		epsilon_str = "" if epsilon is None else ", eps %.2f" % epsilon
+		mean_reward = np.mean(self.total_rewards[-1000:])
+		mean_n_steps = np.mean(self.total_n_steps_ep[-1000:])
 		if len(self.total_rewards) % 1000 == 0:
-			print("%d epoches, %d games, mean reward %.3f, speed %.2f f/s%s" % (len(self.total_rewards)/10000,  len(self.total_rewards), mean_reward, speed, epsilon_str))
-		sys.stdout.flush()
-		if epsilon is not None:
-			self.writer.add_scalar("epsilon", epsilon, frame)
+			print("%d epoches, %d games, avg steps %d, mean reward %.3f, speed %.2f"
+				%(n_epoches, n_games, mean_n_steps, mean_reward, speed))
+			sys.stdout.flush()
 		self.writer.add_scalar("speed", speed, frame)
-		self.writer.add_scalar("reward_100", mean_reward, frame)
+		self.writer.add_scalar("reward_1000", mean_reward, frame)
 		self.writer.add_scalar("reward", reward, frame)
-		if mean_reward > self.stop_reward:
-			print("Solved in %d frames!" % frame)
+		self.writer.add_scalar("steps_1000", n_steps_ep, frame)
+		if n_epoches > 500:
+			print("Finish %d epoches and %d games" % n_epoches, n_games)
 			return True
 		return False
-
-
-class AtariPGN(nn.Module):
-	def __init__(self, input_shape, n_actions):
-		super(AtariPGN, self).__init__()
-
-		self.conv = nn.Sequential(
-			nn.Conv2d(input_shape[0], 32, kernel_size=8, stride=4),
-			nn.ReLU(),
-			nn.Conv2d(32, 64, kernel_size=4, stride=2),
-			nn.ReLU(),
-			nn.Conv2d(64, 64, kernel_size=3, stride=1),
-			nn.ReLU()
-		)
-
-		conv_out_size = self._get_conv_out(input_shape)
-		self.fc = nn.Sequential(
-			nn.Linear(conv_out_size, 512),
-			nn.ReLU(),
-			nn.Linear(512, n_actions)
-		)
-
-	def _get_conv_out(self, shape):
-		o = self.conv(torch.zeros(1, *shape))
-		return int(np.prod(o.size()))
-
-	def forward(self, x):
-		fx = x.float() / 256
-		conv_out = self.conv(fx).view(fx.size()[0], -1)
-		return self.fc(conv_out)
-
