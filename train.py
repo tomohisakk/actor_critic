@@ -17,8 +17,8 @@ from envs.static import MEDAEnv
 #from envs.dynamic import MEDAEnv
 
 GAMMA = 0.99
-LEARNING_RATE = 0.001
-ENTROPY_BETA = 0.01
+LEARNING_RATE = 0.0001
+ENTROPY_BETA = 0.001
 BATCH_SIZE = 64
 
 REWARD_STEPS = 1

@@ -36,7 +36,7 @@ class RewardTracker:
 		self.writer.add_scalar("reward_100", mean_reward, n_games)
 		self.writer.add_scalar("reward", reward, n_games)
 		self.writer.add_scalar("steps_100", n_steps_ep, n_games)
-		if n_epoches > 500:
-			print("Finish %d epoches and %d games" % n_epoches, n_games)
+		if n_epoches == 200:
+			print("Finish %d epoches and %d games" % (n_epoches, n_games))
 			return True
 		return False
