@@ -131,6 +131,8 @@ if __name__ == "__main__":
 	batch = []
 	min_loss_v = np.inf
 
+	n_games = 0
+
 	with common.RewardTracker(writer, stop_reward=10) as tracker:
 		with ptan.common.utils.TBMeanTracker(writer, batch_size=10) as tb_tracker:
 			for step_idx, exp in enumerate(exp_source):
@@ -140,7 +142,8 @@ if __name__ == "__main__":
 				# handle new rewards
 				new_rewards = exp_source.pop_total_rewards()
 				if new_rewards:
-					if tracker.reward(new_rewards[0], step_idx):
+					n_games+= 1
+					if tracker.reward(new_rewards[0], step_idx, n_games):
 						break
 
 				if len(batch) < BATCH_SIZE:
@@ -179,13 +182,13 @@ if __name__ == "__main__":
 					net.save_checkpoint(loss_v, min_loss_v, checkpoint_path)
 					min_loss_v = loss_v
 					
-				tb_tracker.track("advantage",       adv_v, step_idx)
-				tb_tracker.track("values",          value_v, step_idx)
-				tb_tracker.track("batch_rewards",   vals_ref_v, step_idx)
-				tb_tracker.track("loss_entropy",    entropy_loss_v, step_idx)
-				tb_tracker.track("loss_policy",     loss_policy_v, step_idx)
-				tb_tracker.track("loss_value",      loss_value_v, step_idx)
-				tb_tracker.track("loss_total",      loss_v, step_idx)
-				tb_tracker.track("grad_l2",         np.sqrt(np.mean(np.square(grads))), step_idx)
-				tb_tracker.track("grad_max",        np.max(np.abs(grads)), step_idx)
-				tb_tracker.track("grad_var",        np.var(grads), step_idx)
+				tb_tracker.track("advantage",       adv_v, n_games)
+				tb_tracker.track("values",          value_v, n_games)
+				tb_tracker.track("batch_rewards",   vals_ref_v, n_games)
+				tb_tracker.track("loss_entropy",    entropy_loss_v, n_games)
+				tb_tracker.track("loss_policy",     loss_policy_v, n_games)
+				tb_tracker.track("loss_value",      loss_value_v, n_games)
+				tb_tracker.track("loss_total",      loss_v, n_games)
+				tb_tracker.track("grad_l2",         np.sqrt(np.mean(np.square(grads))), n_games)
+				tb_tracker.track("grad_max",        np.max(np.abs(grads)), n_games)
+				tb_tracker.track("grad_var",        np.var(grads), n_games)

@@ -18,12 +18,11 @@ class RewardTracker:
 	def __exit__(self, *args):
 		self.writer.close()
 
-	def reward(self, reward, frame):
+	def reward(self, reward, frame, n_games):
 		self.total_rewards.append(reward)
 		n_steps_ep = frame - self.ts_frame
 		self.total_n_steps_ep.append(n_steps_ep)
 		n_epoches = int(len(self.total_rewards)/10000)
-		n_games = int(len(self.total_rewards))
 		speed = (frame - self.ts_frame) / (time.time() - self.ts)
 		self.ts_frame = frame
 		self.ts = time.time()
@@ -33,10 +32,10 @@ class RewardTracker:
 			print("%d epoches, %d games, avg steps %d, mean reward %.3f, speed %.2f"
 				%(n_epoches, n_games, mean_n_steps, mean_reward, speed))
 			sys.stdout.flush()
-		self.writer.add_scalar("speed", speed, frame)
-		self.writer.add_scalar("reward_100", mean_reward, frame)
-		self.writer.add_scalar("reward", reward, frame)
-		self.writer.add_scalar("steps_100", n_steps_ep, frame)
+		self.writer.add_scalar("speed", speed, n_games)
+		self.writer.add_scalar("reward_100", mean_reward, n_games)
+		self.writer.add_scalar("reward", reward, n_games)
+		self.writer.add_scalar("steps_100", n_steps_ep, n_games)
 		if n_epoches > 500:
 			print("Finish %d epoches and %d games" % n_epoches, n_games)
 			return True
