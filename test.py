@@ -6,7 +6,7 @@ from envs.static import MEDAEnv
 import numpy as np
 import collections
 
-from tensorboardX import SummaryWriter
+#from tensorboardX import SummaryWriter
 
 class Maps():
 	State = "D"
@@ -49,7 +49,6 @@ def _gen_random_map(w, h, p1):
 """
 
 
-
 if __name__ == "__main__":
 	###### Set params ##########
 	ENV_NAME = "LR=0.0001_EB=0.001"
@@ -64,7 +63,7 @@ if __name__ == "__main__":
 
 	device = T.device('cpu')
 
-	writer = SummaryWriter(comment = "Result of " + ENV_NAME)
+#	writer = SummaryWriter(comment = "Result of " + ENV_NAME)
 	CHECKPOINT_PATH = "saves/" + ENV_NAME
 
 	net = AtariA2C(env.observation_space, env.action_space).to(device)
@@ -73,6 +72,7 @@ if __name__ == "__main__":
 	n_games = 0
 
 	counter14 = 0
+	counter_others = 0
 	counter32 = 0
 
 	while n_games != TOTAL_GAMES:
@@ -87,22 +87,26 @@ if __name__ == "__main__":
 			probs, _ = net(observation)
 			action = T.argmax(probs).item()
 		
-			observation_, reward, done, _ = env.step(action)
+			observation_, reward, done, message = env.step(action)
 
 			score += reward
 			observation = observation_
-			n_steps += 1
+
+			if message == None:
+				n_steps += 1
 
 		if n_steps == 14:
 			counter14 += 1
 		elif n_steps == 32:
 			counter32 += 1
 		else:
+			counter_others += 1
 			print("other: ", n_steps)
 
-		writer.add_scalar("Step_num", n_steps, n_games)
+#		writer.add_scalar("Step_num", n_steps, n_games)
 		n_games += 1
 
 	print("14 is ", counter14)
+	print("other is ", counter_others)
 	print("32 is ", counter32)
 	print("Finish " + str(TOTAL_GAMES) + " tests")

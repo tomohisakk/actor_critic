@@ -88,6 +88,7 @@ class MEDAEnv(gym.Env):
 	def step(self, action):
 		done = False
 		self.n_steps += 1
+		message = None
 
 		_dist = self._get_dist(self.state, self.goal)
 #		print(_dist)
@@ -115,7 +116,7 @@ class MEDAEnv(gym.Env):
 
 		obs = self._get_obs()
 #		print(obs)
-		return obs, reward, done, {}
+		return obs, reward, done, message
 
 	def _get_dist(self, state1, state2):
 		diff_x = state1[1] - state2[1]
@@ -143,7 +144,6 @@ class MEDAEnv(gym.Env):
 			self.map[self.state[1]][self.state[0]] = self.maps.State
 #			print(self.map)
 
-		return
 
 	def _get_obs(self):
 		obs = np.zeros(shape = (self.w, self.h, 3))

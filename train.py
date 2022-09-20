@@ -24,6 +24,10 @@ BATCH_SIZE = 64
 REWARD_STEPS = 1
 CLIP_GRAD = 1.0
 
+W = 8
+H = 8
+P = 0.8
+
 class AtariA2C(nn.Module):
 	def __init__(self, input_shape, n_actions):
 		super(AtariA2C, self).__init__()
@@ -107,7 +111,7 @@ def unpack_batch(batch, net, device='cpu'):
 
 if __name__ == "__main__":
 
-	env = MEDAEnv(p=0.8)
+	env = MEDAEnv(w=W, h=H, p=P)
 	env_name = "LR=" + str(LEARNING_RATE) + "_EB=" + str(ENTROPY_BETA)
 	writer = SummaryWriter(comment = env_name)
 
@@ -130,8 +134,8 @@ if __name__ == "__main__":
 
 	n_games = 0
 
-	with common.RewardTracker(writer, stop_reward=10) as tracker:
-		with ptan.common.utils.TBMeanTracker(writer, batch_size=10) as tb_tracker:
+	with common.RewardTracker(writer) as tracker:
+		with ptan.common.utils.TBMeanTracker(writer, batch_size=1000) as tb_tracker:
 			for step_idx, exp in enumerate(exp_source):
 #				print(exp.reward)
 				batch.append(exp)
