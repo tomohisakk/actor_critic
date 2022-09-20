@@ -2,6 +2,7 @@ import torch as T
 from train import AtariA2C
 import ptan
 from envs.static import MEDAEnv
+#from envs.dynamic import MEDAEnv
 import numpy as np
 import collections
 
@@ -20,7 +21,6 @@ def _is_map_good(w, h, map, start):
 	seen = set([start])
 	while queue:
 		path = queue.popleft()
-#			print(path)
 		x, y = path[-1]
 		if map[y][x] == Maps.Goal:
 			return path
@@ -52,12 +52,12 @@ def _gen_random_map(w, h, p1):
 
 if __name__ == "__main__":
 	###### Set params ##########
-	ENV_NAME = "LR=0.001_EB=0.01"
-	TOTAL_GAMES = 10
+	ENV_NAME = "LR=0.0001_EB=0.001"
+	TOTAL_GAMES = 1000
 
 	W = 8
 	H = 8
-	P = 0.9
+	P = 0.8
 
 	############################
 	env = MEDAEnv(test_flag=True)
@@ -71,6 +71,9 @@ if __name__ == "__main__":
 	net.load_checkpoint(CHECKPOINT_PATH)
 
 	n_games = 0
+
+	counter14 = 0
+	counter32 = 0
 
 	while n_games != TOTAL_GAMES:
 		done = False
@@ -90,7 +93,16 @@ if __name__ == "__main__":
 			observation = observation_
 			n_steps += 1
 
+		if n_steps == 14:
+			counter14 += 1
+		elif n_steps == 32:
+			counter32 += 1
+		else:
+			print("other: ", n_steps)
+
 		writer.add_scalar("Step_num", n_steps, n_games)
 		n_games += 1
 
+	print("14 is ", counter14)
+	print("32 is ", counter32)
 	print("Finish " + str(TOTAL_GAMES) + " tests")

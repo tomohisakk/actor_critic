@@ -107,7 +107,7 @@ def unpack_batch(batch, net, device='cpu'):
 
 if __name__ == "__main__":
 
-	env = MEDAEnv(p=0.9)
+	env = MEDAEnv(p=0.8)
 	env_name = "LR=" + str(LEARNING_RATE) + "_EB=" + str(ENTROPY_BETA)
 	writer = SummaryWriter(comment = env_name)
 
@@ -140,7 +140,7 @@ if __name__ == "__main__":
 				new_rewards = exp_source.pop_total_rewards()
 				if new_rewards:
 					n_games += 1
-					if n_games%10000 == 0:
+					if n_games%30000 == 0:
 						net.save_checkpoint(checkpoint_path)
 					if tracker.reward(new_rewards[0], step_idx, n_games):
 						break
