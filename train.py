@@ -13,31 +13,32 @@ import torch.optim as optim
 
 from lib import common
 
-from envs.static import MEDAEnv
-#from envs.dynamic import MEDAEnv
+from sub_envs.static import MEDAEnv
+#from sub_envs.dynamic import MEDAEnv
 
 GAMMA = 0.99
-LEARNING_RATE = 0.0001
-ENTROPY_BETA = 0.001
-BATCH_SIZE = 64
+LEARNING_RATE = 0.001
+ENTROPY_BETA = 0.01
+BATCH_SIZE = 32
 
 REWARD_STEPS = 1
 CLIP_GRAD = 1.0
 
-W = 8
-H = 8
-P = 0.8
+W = 15
+H = 30
+DSIZE = 3
+P = 1
 
 class AtariA2C(nn.Module):
 	def __init__(self, input_shape, n_actions):
 		super(AtariA2C, self).__init__()
 
 		self.conv = nn.Sequential(
-			nn.Conv2d(input_shape[0], 32, 1, stride=1),
+			nn.Conv2d(input_shape[0], 64, 1, stride=3),
 			nn.ReLU(),
-			nn.Conv2d(32, 64, 2, stride=1),
+			nn.Conv2d(64, 128, 1, stride=3),
 			nn.ReLU(),
-			nn.Conv2d(64, 64, 2, stride=1),
+			nn.Conv2d(128, 128, 1, stride=3),
 			nn.ReLU()
 		)
 
@@ -45,13 +46,17 @@ class AtariA2C(nn.Module):
 		self.policy = nn.Sequential(
 			nn.Linear(conv_out_size, 128),
 			nn.ReLU(),
-			nn.Linear(128, n_actions)
+			nn.Linear(128, 32),
+			nn.ReLU(),
+			nn.Linear(32, n_actions)
 		)
 
 		self.value = nn.Sequential(
 			nn.Linear(conv_out_size, 128),
 			nn.ReLU(),
-			nn.Linear(128, 1)
+			nn.Linear(128, 32),
+			nn.ReLU(),
+			nn.Linear(32, 1)
 		)
 
 	def _get_conv_out(self, shape):
@@ -111,7 +116,7 @@ def unpack_batch(batch, net, device='cpu'):
 
 if __name__ == "__main__":
 
-	env = MEDAEnv(w=W, h=H, p=P)
+	env = MEDAEnv(w=W, h=H, dsize=DSIZE, p=P)
 	env_name = "LR=" + str(LEARNING_RATE) + "_EB=" + str(ENTROPY_BETA)
 	writer = SummaryWriter(comment = env_name)
 
@@ -128,8 +133,9 @@ if __name__ == "__main__":
 	agent = ptan.agent.PolicyAgent(lambda x: net(x)[0], apply_softmax=True, device=device)
 	exp_source = ptan.experience.ExperienceSourceFirstLast(env, agent, gamma=GAMMA, steps_count=REWARD_STEPS)
 
-	optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
-
+#	optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.99999))
+	optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE, momentum=0.9)
+#	optimizer = optim.RMSprop(net.parameters(), lr=LEARNING_RATE, alpha=0.99, eps=1e-08)
 	batch = []
 
 	n_games = 0

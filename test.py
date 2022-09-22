@@ -1,52 +1,53 @@
 import torch as T
 from train import AtariA2C
 import ptan
-from envs.static import MEDAEnv
+from sub_envs.static import MEDAEnv
 #from envs.dynamic import MEDAEnv
 import numpy as np
 import collections
 
+
+from sub_envs.map import MakeMap
+from sub_envs.map import Symbols
+
 #from tensorboardX import SummaryWriter
 
-class Maps():
-	State = "D"
-	Goal = "G"
-	Static_module = "#"
-	Dynanic_module = "*"
-	Health = "."
+def _is_touching(dstate, obj, map, dsize):
+		i = 0
+		while True:
+			j = 0
+			while True:
+				if map[dstate[1]+j][dstate[0]+i] == obj:
+					return True
+				j += 1
+				if j == dsize:
+					break
+			i += 1
+			if i == dsize:
+				break
 
+		return False
 
-def _is_map_good(w, h, map, start):
+def _compute_shortest_route(w, h, dsize, symbols,map, start):
 	queue = collections.deque([[start]])
 	seen = set([start])
+#		print(self.map)
 	while queue:
 		path = queue.popleft()
+#			print(path)
 		x, y = path[-1]
-		if map[y][x] == Maps.Goal:
+		if _is_touching((x,y), symbols.Goal, map, dsize):
 			return path
 		for x2, y2 in ((x+1, y), (x-1, y), (x, y+1), (x, y-1)):
-			if 0 <= x2 < w and 0 <= y2 < h and \
-			map[y2][x2] != Maps.Dynanic_module and map[y2][x2] != Maps.Static_module and (x2, y2) not in seen:
+			if 0 <= x2 < (w-dsize+1) and 0 <= y2 < (h-dsize+1) and \
+			(_is_touching((x2,y2), symbols.Dynamic_module, map, dsize) == False) and\
+			(_is_touching((x2,y2), symbols.Static_module, map, dsize) == False) and\
+			(x2, y2) not in seen:
 				queue.append(path + [(x2, y2)])
 				seen.add((x2, y2))
+#		print("Bad map")
+#		print(self.map)
 	return False
-
-def _gen_random_map(w, h, p1):
-	while True:
-		map = np.random.choice([".", "#", '*'], (w, h), p=[p1, (1-p1)/2, (1-p1)/2])
-		map[0][0] = "D"
-		map[-1][-1] = "G"
-		if _is_map_good(w, h, map, (0,0)):
-			break
-
-	return map
-"""
-	print("============================================================================================")
-	print("--- Start map ---")
-	print(map)
-	print("============================================================================================")
-	print()
-"""
 
 
 if __name__ == "__main__":
@@ -56,10 +57,11 @@ if __name__ == "__main__":
 
 	W = 8
 	H = 8
+	DSIZE = 2
 	P = 0.8
 
 	############################
-	env = MEDAEnv(test_flag=True)
+	env = MEDAEnv(w=W, h=H, dsize=DSIZE, p=P, test_flag=True)
 
 	device = T.device('cpu')
 
@@ -71,16 +73,19 @@ if __name__ == "__main__":
 
 	n_games = 0
 
-	counter14 = 0
-	counter_others = 0
-	counter32 = 0
+	n_critical = 0
+
+	map_symbols = Symbols()
+	mapclass = MakeMap(w=W,h=H,dsize=DSIZE,p=P)
 
 	while n_games != TOTAL_GAMES:
 		done = False
 		score = 0
 		n_steps = 0
-		map = _gen_random_map(W, H, P)
+		map = mapclass.gen_random_map()
 		observation = env.reset(test_map=map)
+
+		path = _compute_shortest_route(W, H, DSIZE, map_symbols, map, (0,0))
 
 		while not done:
 			observation = T.tensor([observation], dtype=T.float).to(device)
@@ -95,18 +100,16 @@ if __name__ == "__main__":
 			if message == None:
 				n_steps += 1
 
-		if n_steps == 14:
-			counter14 += 1
-		elif n_steps == 32:
-			counter32 += 1
-		else:
-			counter_others += 1
-			print("other: ", n_steps)
+#		print("shortest:",len(path))
+#		print("stepnum:",n_steps)
+
+		if len(path) == n_steps:
+			n_critical += 1
 
 #		writer.add_scalar("Step_num", n_steps, n_games)
 		n_games += 1
 
-	print("14 is ", counter14)
-	print("other is ", counter_others)
-	print("32 is ", counter32)
 	print("Finish " + str(TOTAL_GAMES) + " tests")
+	print("Num of critical path is ", n_critical)
+	print("Avg of critical path is ", n_critical/TOTAL_GAMES)
+

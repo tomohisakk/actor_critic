@@ -166,7 +166,7 @@ class MEDAEnv(gym.Env):
 					obs[j][i][0] = 1
 				elif self.map[j][i] == self.maps.Goal:
 					obs[j][i][1] = 1
-				elif self.map[j][i] == self.maps.Dynanic_module or self.map[j][i] == self.maps.Static_module:
+				elif self.map[j][i] == self.maps.Static_module:
 					obs[j][i][2] = 1
 #		print(obs)
 		return obs
