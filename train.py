@@ -20,14 +20,18 @@ GAMMA = 0.99
 LEARNING_RATE = 0.001
 ENTROPY_BETA = 0.01
 BATCH_SIZE = 32
+W = 8
+H = 8
+DSIZE = 1
+P = 0.9
+
+USEGPU = False
+OPTIMIZER= "SGD"	#Adam or SGD
 
 REWARD_STEPS = 1
 CLIP_GRAD = 1.0
+SGAMMA = 0.1
 
-W = 15
-H = 30
-DSIZE = 3
-P = 1
 
 class AtariA2C(nn.Module):
 	def __init__(self, input_shape, n_actions):
@@ -44,17 +48,17 @@ class AtariA2C(nn.Module):
 
 		conv_out_size = self._get_conv_out(input_shape)
 		self.policy = nn.Sequential(
-			nn.Linear(conv_out_size, 128),
+			nn.Linear(conv_out_size, 64),
 			nn.ReLU(),
-			nn.Linear(128, 32),
+			nn.Linear(64, 32),
 			nn.ReLU(),
 			nn.Linear(32, n_actions)
 		)
 
 		self.value = nn.Sequential(
-			nn.Linear(conv_out_size, 128),
+			nn.Linear(conv_out_size, 64),
 			nn.ReLU(),
-			nn.Linear(128, 32),
+			nn.Linear(64, 32),
 			nn.ReLU(),
 			nn.Linear(32, 1)
 		)
@@ -124,18 +128,28 @@ if __name__ == "__main__":
 		os.makedirs("saves")
 	checkpoint_path = "saves/" + env_name
 
-#	device = T.device('cuda:0' if T.cuda.is_available else 'cpu')
-	device = T.device('cpu')
+	if USEGPU == True:
+		device = T.device('cuda:0' if T.cuda.is_available else 'cpu')
+	else:
+		device = T.device('cpu')
 	print("Device is ", device)
+
 	net = AtariA2C(env.observation_space, env.action_space).to(device)
 	print(net)
 
 	agent = ptan.agent.PolicyAgent(lambda x: net(x)[0], apply_softmax=True, device=device)
 	exp_source = ptan.experience.ExperienceSourceFirstLast(env, agent, gamma=GAMMA, steps_count=REWARD_STEPS)
 
-#	optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.99999))
-	optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE, momentum=0.9)
-#	optimizer = optim.RMSprop(net.parameters(), lr=LEARNING_RATE, alpha=0.99, eps=1e-08)
+
+	if OPTIMIZER == "Adam":
+		optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.99999))
+	elif OPTIMIZER == "SGD":
+		optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE, momentum=0.9)
+	else:
+		print("Optimizer not found")
+
+#	scheduler = T.optim.lr_scheduler.ExponentialLR(optimizer, gamma=params.sgamma)
+
 	batch = []
 
 	n_games = 0
@@ -152,6 +166,8 @@ if __name__ == "__main__":
 					n_games += 1
 					if n_games%30000 == 0:
 						net.save_checkpoint(checkpoint_path)
+#						scheduler.step()
+
 					if tracker.reward(new_rewards[0], step_idx, n_games):
 						break
 
