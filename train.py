@@ -19,18 +19,18 @@ from sub_envs.static import MEDAEnv
 GAMMA = 0.99
 LEARNING_RATE = 0.001
 ENTROPY_BETA = 0.01
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 W = 8
 H = 8
 DSIZE = 1
 P = 0.9
 
 USEGPU = False
-OPTIMIZER= "SGD"	#Adam or SGD
+OPTIMIZER= "Adam"	#Adam or SGD
 
 REWARD_STEPS = 1
-CLIP_GRAD = 1.0
-SGAMMA = 0.1
+CLIP_GRAD = 0.1
+SGAMMA = 0.9
 
 
 class AtariA2C(nn.Module):
@@ -142,7 +142,7 @@ if __name__ == "__main__":
 
 
 	if OPTIMIZER == "Adam":
-		optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.99999))
+		optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
 	elif OPTIMIZER == "SGD":
 		optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE, momentum=0.9)
 	else:
@@ -155,7 +155,7 @@ if __name__ == "__main__":
 	n_games = 0
 
 	with common.RewardTracker(writer) as tracker:
-		with ptan.common.utils.TBMeanTracker(writer, batch_size=1000) as tb_tracker:
+		with ptan.common.utils.TBMeanTracker(writer, batch_size=100) as tb_tracker:
 			for step_idx, exp in enumerate(exp_source):
 #				print(exp.reward)
 				batch.append(exp)
