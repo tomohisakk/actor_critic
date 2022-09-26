@@ -17,8 +17,8 @@ from sub_envs.static import MEDAEnv
 #from sub_envs.dynamic import MEDAEnv
 
 GAMMA = 0.99
-LEARNING_RATE = 0.001
-ENTROPY_BETA = 0.01
+LEARNING_RATE = 1e-4
+ENTROPY_BETA = 1e-3
 BATCH_SIZE = 64
 W = 8
 H = 8
@@ -38,29 +38,25 @@ class AtariA2C(nn.Module):
 		super(AtariA2C, self).__init__()
 
 		self.conv = nn.Sequential(
-			nn.Conv2d(input_shape[0], 64, 1, stride=3),
+			nn.Conv2d(input_shape[0], 64, 1, stride=1),
 			nn.ReLU(),
-			nn.Conv2d(64, 128, 1, stride=3),
+			nn.Conv2d(64, 128, 2, stride=1),
 			nn.ReLU(),
-			nn.Conv2d(128, 128, 1, stride=3),
+			nn.Conv2d(128, 128, 2, stride=1),
 			nn.ReLU()
 		)
 
 		conv_out_size = self._get_conv_out(input_shape)
 		self.policy = nn.Sequential(
-			nn.Linear(conv_out_size, 64),
+			nn.Linear(conv_out_size, 128),
 			nn.ReLU(),
-			nn.Linear(64, 32),
-			nn.ReLU(),
-			nn.Linear(32, n_actions)
+			nn.Linear(128, n_actions)
 		)
 
 		self.value = nn.Sequential(
-			nn.Linear(conv_out_size, 64),
+			nn.Linear(conv_out_size, 128),
 			nn.ReLU(),
-			nn.Linear(64, 32),
-			nn.ReLU(),
-			nn.Linear(32, 1)
+			nn.Linear(128, 1)
 		)
 
 	def _get_conv_out(self, shape):
@@ -81,12 +77,6 @@ class AtariA2C(nn.Module):
 
 
 def unpack_batch(batch, net, device='cpu'):
-	"""
-	Convert batch into training tensors
-	:param batch:
-	:param net:
-	:return: states variable, actions tensor, reference values variable
-	"""
 	states = []
 	actions = []
 	rewards = []
